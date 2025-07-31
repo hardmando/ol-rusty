@@ -1,0 +1,8 @@
+[workspace]
+members = [
+	"crates/engine",
+	"crates/windowing",
+	"crates/renderer",
+	"crates/scene",
+	"crates/core"
+]
