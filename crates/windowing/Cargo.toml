@@ -3,10 +3,6 @@ name = 'ol_windowing'
 version = '0.1.0'
 edition = '2021'
 
-[[bin]]
-name = "test_window"
-path = "src/main.rs"
-
 [dependencies]
 log = '0.4'
 winit = {version = '0.28', features = ['wayland', 'x11']}
