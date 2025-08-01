@@ -15,6 +15,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         Err(e) => {
             eprintln!("Failed to create renderer: {:?}", e);
             eprintln!("This is likely a Vulkan driver compatibility issue.");
+            #[cfg(target_os = "macos")]
+            eprintln!("On macOS, make sure MoltenVK is installed: brew install vulkan-headers vulkan-loader molten-vk");
+            #[cfg(not(target_os = "macos"))]
             eprintln!("Try running with X11: WAYLAND_DISPLAY= DISPLAY=:0 cargo run -p ol_engine");
             return Ok(());
         }
