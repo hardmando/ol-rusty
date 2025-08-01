@@ -44,7 +44,7 @@ impl Renderer {
             .application_version(vk::make_api_version(0, 0, 1, 0))
             .engine_name(&engine_name)
             .engine_version(vk::make_api_version(0, 0, 1, 0))
-            .api_version(vk::API_VERSION_1_3);
+            .api_version(vk::API_VERSION_1_1);
 
         let extensions =
             ash_window::enumerate_required_extensions(window.raw_display_handle()).unwrap();
