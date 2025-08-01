@@ -4,7 +4,6 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-raw-window-handle = "0.5"
-ash = "0.37"
-ash-window = "0.12"
-winit = "0.28"
+ash = "0.38"
+ash-window = "0.13"
+winit = "0.29"

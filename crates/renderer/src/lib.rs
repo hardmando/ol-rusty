@@ -1,14 +1,14 @@
 use ash::{vk, Entry, Instance};
-use raw_window_handle::{HasRawDisplayHandle, HasRawWindowHandle};
 use std::error::Error;
 use std::ffi::{c_char, CString};
+use std::marker::PhantomData;
 use winit::window::Window;
+use winit::raw_window_handle::{HasRawDisplayHandle as _, HasRawWindowHandle as _};
 
 pub struct Renderer {
     _entry: Entry,
     instance: Instance,
     surface: vk::SurfaceKHR,
-    surface_loader: ash::extensions::khr::Surface,
 }
 
 impl Renderer {
@@ -16,14 +16,13 @@ impl Renderer {
         let entry = unsafe { Entry::load()? };
         let instance = Self::create_instance(&entry, window)?;
 
-        // Create surface
-        let surface_loader = ash::extensions::khr::Surface::new(&entry, &instance);
+        // Create surface using ash_window only
         let surface = unsafe {
             ash_window::create_surface(
                 &entry,
                 &instance,
-                window.raw_display_handle(),
-                window.raw_window_handle(),
+                window.raw_display_handle().unwrap(),
+                window.raw_window_handle().unwrap(),
                 None,
             )?
         };
@@ -31,7 +30,6 @@ impl Renderer {
             _entry: entry,
             instance,
             surface,
-            surface_loader,
         })
     }
 
@@ -39,19 +37,31 @@ impl Renderer {
         let app_name = CString::new("ol-rusty")?;
         let engine_name = CString::new("ol_engine")?;
 
-        let app_info = vk::ApplicationInfo::builder()
-            .application_name(&app_name)
-            .application_version(vk::make_api_version(0, 0, 1, 0))
-            .engine_name(&engine_name)
-            .engine_version(vk::make_api_version(0, 0, 1, 0))
-            .api_version(vk::API_VERSION_1_1);
+        let app_info = vk::ApplicationInfo {
+            s_type: vk::StructureType::APPLICATION_INFO,
+            p_next: std::ptr::null(),
+            p_application_name: app_name.as_ptr(),
+            application_version: vk::make_api_version(0, 0, 1, 0),
+            p_engine_name: engine_name.as_ptr(),
+            engine_version: vk::make_api_version(0, 0, 1, 0),
+            api_version: vk::API_VERSION_1_3,
+            _marker: PhantomData,
+        };
 
         let extensions =
-            ash_window::enumerate_required_extensions(window.raw_display_handle()).unwrap();
+            ash_window::enumerate_required_extensions(window.raw_display_handle().unwrap()).unwrap();
 
-        let create_info = vk::InstanceCreateInfo::builder()
-            .application_info(&app_info)
-            .enabled_extension_names(&extensions[..]);
+        let create_info = vk::InstanceCreateInfo {
+            s_type: vk::StructureType::INSTANCE_CREATE_INFO,
+            p_next: std::ptr::null(),
+            flags: vk::InstanceCreateFlags::empty(),
+            p_application_info: &app_info,
+            enabled_layer_count: 0,
+            pp_enabled_layer_names: std::ptr::null(),
+            enabled_extension_count: extensions.len() as u32,
+            pp_enabled_extension_names: extensions.as_ptr(),
+            _marker: PhantomData,
+        };
 
         let instance = unsafe { entry.create_instance(&create_info, None)? };
         Ok(instance)
@@ -61,7 +71,7 @@ impl Renderer {
 impl Drop for Renderer {
     fn drop(&mut self) {
         unsafe {
-            self.surface_loader.destroy_surface(self.surface, None);
+            // Surface is destroyed with the instance in ash 0.38, no need for a loader
             self.instance.destroy_instance(None);
         }
     }
