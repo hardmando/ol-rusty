@@ -6,6 +6,7 @@ edition = '2021'
 [dependencies]
 log = '0.4'
 ol_windowing = { path = '../windowing/'}
-ol_core = { path = '../core'}
 ol_renderer = { path = '../renderer/'}
-ol_scene = { path = '../scene'}
+
+[features]
+default = []

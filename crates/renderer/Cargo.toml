@@ -1,8 +1,10 @@
 [package]
-name = 'ol_renderer'
-version = '0.1.0'
-edition = '2021'
+name = "ol_renderer"
+version = "0.1.0"
+edition = "2021"
 
 [dependencies]
-log = '0.4'
-
+raw-window-handle = "0.5"
+ash = "0.37"
+ash-window = "0.12"
+winit = "0.28"
