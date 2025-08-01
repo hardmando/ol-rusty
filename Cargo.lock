@@ -660,6 +660,7 @@ dependencies = [
  "log",
  "ol_renderer",
  "ol_windowing",
+ "winit",
 ]
 
 [[package]]

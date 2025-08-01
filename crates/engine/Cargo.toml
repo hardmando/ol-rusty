@@ -5,6 +5,7 @@ edition = '2021'
 
 [dependencies]
 log = '0.4'
+winit = '0.28'
 ol_windowing = { path = '../windowing/'}
 ol_renderer = { path = '../renderer/'}
 
