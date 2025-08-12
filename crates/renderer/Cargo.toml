@@ -1,0 +1,9 @@
+[package]
+name = "renderer"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+ash.workspace = true
+ash-window.workspace = true
+winit.workspace = true
