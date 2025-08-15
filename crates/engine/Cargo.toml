@@ -4,10 +4,10 @@ version = "0.1.0"
 edition = "2021"
 
 [[bin]]
-name = "winit_test"
-path = "src/bin/winit_test.rs"
+name = "main"
+path = "src/main.rs"
 
 [dependencies]
 renderer = { path = "../renderer" }
 windowing = { path = "../windowing" }
-winit = "0.28.0"
+winit = "0.30"
