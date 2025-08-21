@@ -1,7 +1,7 @@
 use ash::khr::swapchain::Device as SwapchainLoader;
 use ash::{vk, Entry, Instance};
 use std::error::Error;
-use std::ffi::{c_char, CString};
+use std::ffi::CString;
 use std::marker::PhantomData;
 use winit::raw_window_handle::{HasRawDisplayHandle as _, HasRawWindowHandle as _};
 use winit::window::Window;
@@ -22,6 +22,7 @@ pub struct Renderer {
     swapchain_image_views: Vec<vk::ImageView>,
 }
 
+#[allow(deprecated)]
 impl Renderer {
     pub fn new(window: &Window) -> Result<Self, Box<dyn Error>> {
         let entry = unsafe { Entry::load()? };
