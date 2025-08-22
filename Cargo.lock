@@ -331,15 +331,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d8b14ccef22fc6f5a8f4d7d768562a182c04ce9a3b3157b91390b52ddfdf1a76"
 
 [[package]]
-name = "engine"
-version = "0.1.0"
-dependencies = [
- "renderer",
- "windowing",
- "winit",
-]
-
-[[package]]
 name = "equivalent"
 version = "1.0.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -799,6 +790,15 @@ dependencies = [
  "objc2",
  "objc2-core-location",
  "objc2-foundation",
+]
+
+[[package]]
+name = "ol_engine"
+version = "0.1.0"
+dependencies = [
+ "renderer",
+ "windowing",
+ "winit",
 ]
 
 [[package]]
