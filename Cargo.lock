@@ -796,8 +796,24 @@ dependencies = [
 name = "ol_engine"
 version = "0.1.0"
 dependencies = [
- "renderer",
- "windowing",
+ "ol_renderer",
+ "ol_windowing",
+ "winit",
+]
+
+[[package]]
+name = "ol_renderer"
+version = "0.1.0"
+dependencies = [
+ "ash",
+ "ash-window",
+ "winit",
+]
+
+[[package]]
+name = "ol_windowing"
+version = "0.1.0"
+dependencies = [
  "winit",
 ]
 
@@ -953,15 +969,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5407465600fb0548f1442edf71dd20683c6ed326200ace4b1ef0763521bb3b77"
 dependencies = [
  "bitflags 2.9.1",
-]
-
-[[package]]
-name = "renderer"
-version = "0.1.0"
-dependencies = [
- "ash",
- "ash-window",
- "winit",
 ]
 
 [[package]]
@@ -1441,13 +1448,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cf221c93e13a30d793f7645a0e7762c55d169dbb0a49671918a2319d289b10bb"
 dependencies = [
  "windows-sys 0.59.0",
-]
-
-[[package]]
-name = "windowing"
-version = "0.1.0"
-dependencies = [
- "winit",
 ]
 
 [[package]]

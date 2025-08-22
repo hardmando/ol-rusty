@@ -20,6 +20,10 @@ pub struct Renderer {
     swapchain_format: vk::Format,
     swapchain_extent: vk::Extent2D,
     swapchain_image_views: Vec<vk::ImageView>,
+    render_pass: vk::RenderPass,
+    framebuffers: Vec<vk::Framebuffer>,
+    command_pool: vk::CommandPool,
+    command_buffers: Vec<vk::CommandBuffer>,
 }
 
 #[allow(deprecated)]
@@ -152,7 +156,15 @@ impl Renderer {
             })
             .collect();
 
-        Ok(Renderer {
+        let render_pass = Self::create_render_pass(&device, surface_format.format);
+        let framebuffers = Self::create_framebuffers(
+            &device,
+            render_pass,
+            &swapchain_image_views,
+            swapchain_extent,
+        );
+
+        let mut renderer = Renderer {
             _entry: entry,
             instance,
             surface,
@@ -166,7 +178,155 @@ impl Renderer {
             swapchain_format: surface_format.format,
             swapchain_extent,
             swapchain_image_views,
-        })
+            framebuffers,
+            render_pass,
+            command_pool: vk::CommandPool::null(),
+            command_buffers: vec![],
+        };
+
+        renderer.init_command_buffers()?;
+        Ok(renderer)
+    }
+
+    pub fn record_commands(
+        &self,
+        command_buffer: vk::CommandBuffer,
+        framebuffer: vk::Framebuffer,
+    ) -> Result<(), vk::Result> {
+        let begin_info = vk::CommandBufferBeginInfo {
+            _marker: PhantomData,
+            s_type: vk::StructureType::COMMAND_BUFFER_BEGIN_INFO,
+            p_next: std::ptr::null(),
+            flags: vk::CommandBufferUsageFlags::SIMULTANEOUS_USE,
+            p_inheritance_info: std::ptr::null(),
+        };
+
+        unsafe {
+            self.device
+                .begin_command_buffer(command_buffer, &begin_info)?
+        };
+
+        let clear_values = [vk::ClearValue {
+            color: vk::ClearColorValue {
+                float32: [0.0, 0.0, 0.0, 1.0],
+            },
+        }];
+
+        let render_pass_info = vk::RenderPassBeginInfo {
+            _marker: PhantomData,
+            s_type: vk::StructureType::RENDER_PASS_BEGIN_INFO,
+            p_next: std::ptr::null(),
+            render_pass: self.render_pass, // You must create and store this in Renderer
+            framebuffer,
+            render_area: vk::Rect2D {
+                offset: vk::Offset2D { x: 0, y: 0 },
+                extent: self.swapchain_extent,
+            },
+            clear_value_count: clear_values.len() as u32,
+            p_clear_values: clear_values.as_ptr(),
+        };
+
+        unsafe {
+            self.device.cmd_begin_render_pass(
+                command_buffer,
+                &render_pass_info,
+                vk::SubpassContents::INLINE,
+            );
+            self.device.cmd_end_render_pass(command_buffer);
+            self.device.end_command_buffer(command_buffer)?;
+        }
+
+        Ok(())
+    }
+
+    fn init_command_buffers(&mut self) -> Result<(), Box<dyn Error>> {
+        let pool_info = vk::CommandPoolCreateInfo {
+            _marker: PhantomData,
+            s_type: vk::StructureType::COMMAND_POOL_CREATE_INFO,
+            p_next: std::ptr::null(),
+            flags: vk::CommandPoolCreateFlags::RESET_COMMAND_BUFFER,
+            queue_family_index: self.queue_family_index,
+        };
+
+        self.command_pool = unsafe { self.device.create_command_pool(&pool_info, None)? };
+
+        let alloc_info = vk::CommandBufferAllocateInfo {
+            _marker: PhantomData,
+            s_type: vk::StructureType::COMMAND_BUFFER_ALLOCATE_INFO,
+            p_next: std::ptr::null(),
+            command_pool: self.command_pool,
+            level: vk::CommandBufferLevel::PRIMARY,
+            command_buffer_count: self.swapchain_image_views.len() as u32,
+        };
+
+        self.command_buffers = unsafe { self.device.allocate_command_buffers(&alloc_info)? };
+
+        Ok(())
+    }
+
+    fn create_framebuffers(
+        device: &ash::Device,
+        render_pass: vk::RenderPass,
+        image_views: &[vk::ImageView],
+        extent: vk::Extent2D,
+    ) -> Vec<vk::Framebuffer> {
+        image_views
+            .iter()
+            .map(|&view| {
+                let attachments = [view];
+                let framebuffer_info = vk::FramebufferCreateInfo {
+                    s_type: vk::StructureType::FRAMEBUFFER_CREATE_INFO,
+                    render_pass,
+                    attachment_count: attachments.len() as u32,
+                    p_attachments: attachments.as_ptr(),
+                    width: extent.width,
+                    height: extent.height,
+                    layers: 1,
+                    ..Default::default()
+                };
+
+                unsafe { device.create_framebuffer(&framebuffer_info, None) }
+                    .expect("Failed to create framebuffer")
+            })
+            .collect()
+    }
+
+    fn create_render_pass(device: &ash::Device, format: vk::Format) -> vk::RenderPass {
+        let color_attachment = vk::AttachmentDescription {
+            format,
+            samples: vk::SampleCountFlags::TYPE_1,
+            load_op: vk::AttachmentLoadOp::CLEAR,
+            store_op: vk::AttachmentStoreOp::STORE,
+            stencil_load_op: vk::AttachmentLoadOp::DONT_CARE,
+            stencil_store_op: vk::AttachmentStoreOp::DONT_CARE,
+            initial_layout: vk::ImageLayout::UNDEFINED,
+            final_layout: vk::ImageLayout::PRESENT_SRC_KHR,
+            ..Default::default()
+        };
+
+        let color_attachment_ref = vk::AttachmentReference {
+            attachment: 0,
+            layout: vk::ImageLayout::COLOR_ATTACHMENT_OPTIMAL,
+        };
+
+        let subpass = vk::SubpassDescription {
+            pipeline_bind_point: vk::PipelineBindPoint::GRAPHICS,
+            color_attachment_count: 1,
+            p_color_attachments: &color_attachment_ref,
+            ..Default::default()
+        };
+
+        let render_pass_info = vk::RenderPassCreateInfo {
+            s_type: vk::StructureType::RENDER_PASS_CREATE_INFO,
+            attachment_count: 1,
+            p_attachments: &color_attachment,
+            subpass_count: 1,
+            p_subpasses: &subpass,
+            ..Default::default()
+        };
+
+        unsafe { device.create_render_pass(&render_pass_info, None) }
+            .expect("Failed to create render pass")
     }
 
     fn find_queue_family(
@@ -310,6 +470,10 @@ impl Drop for Renderer {
             for &image_view in &self.swapchain_image_views {
                 self.device.destroy_image_view(image_view, None);
             }
+            for fb in &self.framebuffers {
+                self.device.destroy_framebuffer(*fb, None);
+            }
+            self.device.destroy_render_pass(self.render_pass, None);
 
             self.swapchain_loader
                 .destroy_swapchain(self.swapchain, None);

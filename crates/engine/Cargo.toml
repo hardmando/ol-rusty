@@ -8,6 +8,6 @@ name = "main"
 path = "src/main.rs"
 
 [dependencies]
-renderer = { path = "../renderer" }
-windowing = { path = "../windowing" }
+ol_renderer = { path = "../renderer" }
+ol_windowing = { path = "../windowing" }
 winit = "0.30"
